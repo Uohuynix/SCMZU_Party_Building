@@ -1,0 +1,3 @@
+# .gitignore
+node_modules/
+dist/  # 如果 dist 是构建产物，也建议忽略
