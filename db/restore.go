@@ -49,6 +49,8 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL,
     role ENUM('admin','teacher','student') DEFAULT 'student',
     name VARCHAR(50),
+    branch VARCHAR(100),
+    group_name VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -65,6 +67,9 @@ CREATE TABLE IF NOT EXISTS students (
     id_card VARCHAR(20),
     major_class VARCHAR(100),
     type ENUM('masses','activist','candidate','probationary','formal') DEFAULT 'masses',
+    branch VARCHAR(100),
+    group_name VARCHAR(100),
+    photo_url VARCHAR(255),
     admission_date DATE NULL,
     conversion_date DATE NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -120,15 +125,18 @@ CREATE TABLE IF NOT EXISTS rewards (
 // InsertSampleData inserts sample data
 func InsertSampleData(sqlDB *sql.DB) error {
 	sampleDataSQL := `
-INSERT IGNORE INTO users (username, password, role, name) VALUES 
-('admin', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'Administrator'),
-('teacher1', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'teacher', 'Teacher Zhang'),
-('student1', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'student', 'Student Li');
+INSERT IGNORE INTO users (username, password, role, name, branch, group_name) VALUES 
+-- 系统管理员：不隶属于任何具体党支部/党小组
+('admin', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'Administrator', NULL, NULL),
+-- 教师：作为“计算机学院2021级本科生党支部”的管理员，可管理本支部下所有小组
+('teacher1', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'teacher', 'Teacher Zhang', '计算机学院2021级本科生党支部', NULL),
+-- 学生：隶属于具体党支部和党小组，便于教师/管理员按组织管理
+('student1', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'student', 'Student Li', '计算机学院2021级本科生党支部', '第一小组');
 
-INSERT IGNORE INTO students (student_no, name, gender, ethnicity, birth_date, education, phone, id_card, major_class, type, admission_date) VALUES 
-('2021001', 'Zhang San', 'male', 'Han', '2000-01-01', 'Bachelor', '13800138001', '110101200001011234', 'Computer Science', 'masses', '2021-09-01'),
-('2021002', 'Li Si', 'female', 'Han', '2000-02-02', 'Bachelor', '13800138002', '110101200002021234', 'Software Engineering', 'activist', '2021-09-01'),
-('2021003', 'Wang Wu', 'male', 'Han', '2000-03-03', 'Bachelor', '13800138003', '110101200003031234', 'Network Engineering', 'candidate', '2021-09-01');
+INSERT IGNORE INTO students (student_no, name, gender, ethnicity, birth_date, education, phone, id_card, major_class, type, branch, group_name, admission_date) VALUES 
+('2021001', 'Zhang San', 'male', 'Han', '2000-01-01', 'Bachelor', '13800138001', '110101200001011234', 'Computer Science', 'masses', '计算机学院2021级本科生党支部', '第一小组', '2021-09-01'),
+('2021002', 'Li Si', 'female', 'Han', '2000-02-02', 'Bachelor', '13800138002', '110101200002021234', 'Software Engineering', 'activist', '计算机学院2021级本科生党支部', '第一小组', '2021-09-01'),
+('2021003', 'Wang Wu', 'male', 'Han', '2000-03-03', 'Bachelor', '13800138003', '110101200003031234', 'Network Engineering', 'candidate', '计算机学院2021级本科生党支部', '第二小组', '2021-09-01');
 
 INSERT IGNORE INTO trainings (period, student_id, unit, start_date, end_date, score, certificate_no) VALUES 
 ('2021 Spring', 1, 'Marxism School', '2021-03-01', '2021-06-30', 'excellent', 'CERT2021001'),

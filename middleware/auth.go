@@ -55,6 +55,34 @@ func AdminMiddleware() gin.HandlerFunc {
 	}
 }
 
+// TeacherOrAdminMiddleware 允许教师和管理员访问，禁止学生
+func TeacherOrAdminMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		role, exists := c.Get("role")
+		if !exists {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Role not found"})
+			c.Abort()
+			return
+		}
+
+		roleStr := fmt.Sprintf("%v", role)
+		if roleStr == "student" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Student role does not have permission to perform this operation"})
+			c.Abort()
+			return
+		}
+
+		// 允许 admin 和 teacher
+		if roleStr != "admin" && roleStr != "teacher" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
+
 // LoggerMiddleware 日志中间件
 func LoggerMiddleware() gin.HandlerFunc {
 	return gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {

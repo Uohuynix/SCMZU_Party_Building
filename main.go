@@ -64,7 +64,8 @@ func main() {
 
 	// Initialize Handler
 	authHandler := api.NewAuthHandler(authService)
-	studentHandler := api.NewStudentHandler(studentService)
+	// 学员相关接口需要根据用户角色（学生/教师/管理员）做权限控制，因此注入 authService
+	studentHandler := api.NewStudentHandler(studentService, authService)
 	trainingHandler := api.NewTrainingHandler(trainingService)
 	statsHandler := api.NewStatsHandler(statsService)
 
@@ -77,6 +78,9 @@ func main() {
 	router.Use(middleware.CORSMiddleware())
 	router.Use(middleware.ErrorHandlerMiddleware())
 	router.Use(gin.Recovery())
+
+	// Static files for uploaded photos
+	router.Static("/uploads", "./uploads")
 
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
@@ -111,6 +115,7 @@ func main() {
 				students.POST("", studentHandler.CreateStudent)
 				students.PUT("/:id", studentHandler.UpdateStudent)
 				students.DELETE("/:id", studentHandler.DeleteStudent)
+				students.POST("/:id/photo", studentHandler.UploadPhoto)
 
 				// Student development history
 				students.GET("/:id/development", studentHandler.GetDevelopment)
@@ -124,11 +129,14 @@ func main() {
 			// Training management
 			trainings := authenticated.Group("/trainings")
 			{
+				// 所有角色都可以查看
 				trainings.GET("", trainingHandler.ListTrainings)
 				trainings.GET("/:id", trainingHandler.GetTraining)
-				trainings.POST("", trainingHandler.CreateTraining)
-				trainings.PUT("/:id", trainingHandler.UpdateTraining)
-				trainings.DELETE("/:id", trainingHandler.DeleteTraining)
+
+				// 只有教师和管理员可以编辑（创建、更新、删除）
+				trainings.POST("", middleware.TeacherOrAdminMiddleware(), trainingHandler.CreateTraining)
+				trainings.PUT("/:id", middleware.TeacherOrAdminMiddleware(), trainingHandler.UpdateTraining)
+				trainings.DELETE("/:id", middleware.TeacherOrAdminMiddleware(), trainingHandler.DeleteTraining)
 			}
 
 			// Statistics
@@ -141,10 +149,10 @@ func main() {
 
 	// Start server
 	serverAddr := fmt.Sprintf(":%s", cfg.AppPort)
-	log.Printf("? Server started successfully")
-	log.Printf("? Access URL: http://localhost%s", serverAddr)
-	log.Printf("? API docs: http://localhost%s/api/v1", serverAddr)
-	log.Printf("? Health check: http://localhost%s/health", serverAddr)
+	log.Printf("Server started successfully")
+	log.Printf("Access URL: http://localhost%s", serverAddr)
+	log.Printf("API docs: http://localhost%s/api/v1", serverAddr)
+	log.Printf("Health check: http://localhost%s/health", serverAddr)
 	log.Println("\nPress Ctrl+C to stop the server")
 
 	if err := router.Run(serverAddr); err != nil {

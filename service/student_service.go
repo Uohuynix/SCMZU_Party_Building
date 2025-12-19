@@ -31,6 +31,16 @@ func (s *StudentService) GetStudent(id uint) (*entity.Student, error) {
 	return s.studentDao.FindByID(id)
 }
 
+// GetStudentByStudentNo 根据学号获取学生，供“学生本人”权限判断使用
+func (s *StudentService) GetStudentByStudentNo(studentNo string) (*entity.Student, error) {
+	return s.studentDao.FindByStudentNo(studentNo)
+}
+
+// ListStudentsByBranchAndGroup 教师按支部+小组查看成员
+func (s *StudentService) ListStudentsByBranchAndGroup(branch, groupName string, page, pageSize int) ([]entity.Student, int64, error) {
+	return s.studentDao.FindByBranchAndGroup(branch, groupName, page, pageSize)
+}
+
 func (s *StudentService) CreateStudent(student *entity.Student) error {
 	return s.studentDao.Create(student)
 }
