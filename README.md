@@ -15,12 +15,13 @@
 
 ## ✨ 主要功能
 
-- 🔐 **用户认证与授权** - JWT Token认证，支持多角色权限控制
-- 👨‍🎓 **学员信息管理** - 完整的学员CRUD操作，支持分页查询
+- 🔐 **用户认证与授权** - JWT Token认证，支持多角色权限控制（管理员/教师/学生）
+- 👨‍🎓 **学员信息管理** - 完整的学员CRUD操作，支持分页查询、Excel导入导出、照片上传
 - 📚 **培训记录管理** - 培训课程记录，成绩管理和证书管理
-- 📈 **党员发展历程** - 从群众到正式党员的完整发展轨迹
+- 📈 **党员发展历程** - 从群众到正式党员的完整发展轨迹，支持文本格式时间输入
 - 🏆 **奖惩记录管理** - 学员奖励和处分记录管理
 - 📊 **数据统计分析** - 培训成绩统计和数据分析
+- 🏢 **组织关系管理** - 党支部和党小组管理，支持按组织筛选
 - 🌐 **RESTful API** - 标准化的API接口设计
 - 🛠️ **在线测试工具** - 内置API测试页面，支持实时测试
 
@@ -73,10 +74,8 @@ dangjiantest/
 │ ├── db.go # 数据库连接
 │ └── restore.go # 数据恢复
 ├── main.go # 程序入口
-├── api_test_utf8.html # API测试页面 🔥
 ├── API_DOCUMENTATION.md # API接口文档
-├── config.env # 环境配置示例
-├── start_server.bat # Windows启动脚本
+├── config.ini # 环境配置示例
 ├── go.mod # Go模块文件
 └── README.md # 项目说明文档
 ```
@@ -147,6 +146,7 @@ start_server.bat
 #### 方法二：手动启动
 
 ```bash
+cd behind
 go run main.go
 ```
 
@@ -163,14 +163,10 @@ go run main.go
 ### 7. 默认账号
 
 - **管理员**: `admin` / `password`
-- **教师**: `teacher` / `password`
-- **学生**: `student` / `password`
+- **教师**: `teacher1` / `password`（所属党支部：计算机学院2021级本科生党支部）
+- **学生**: `student1` / `password`
 
 ## 📚 API接口文档
-
-### 🔥 在线测试
-
-**推荐使用内置测试页面**: 打开 `api_test_utf8.html` 文件即可在浏览器中测试所有API接口
 
 ### 核心接口概览
 
@@ -182,16 +178,20 @@ go run main.go
 
 #### 👨‍🎓 学员管理
 
-- `GET /api/v1/students` - 获取学员列表（分页）
+- `GET /api/v1/students` - 获取学员列表（分页，支持按党支部筛选）
+- `GET /api/v1/students/branches` - 获取所有党支部列表（仅管理员）
 - `GET /api/v1/students/{id}` - 获取学员详情
 - `POST /api/v1/students` - 创建学员
 - `PUT /api/v1/students/{id}` - 更新学员信息
-- `DELETE /api/v1/students/{id}` - 删除学员
+- `DELETE /api/v1/students/{id}` - 删除学员（仅管理员）
+- `POST /api/v1/students/{id}/photo` - 上传学员照片
 
 #### 📈 发展历程
 
 - `GET /api/v1/students/{id}/development` - 获取发展历程
-- `PUT /api/v1/students/{id}/development` - 更新发展历程
+- `PUT /api/v1/students/{id}/development` - 更新发展历程（支持文本格式时间输入）
+
+**注意**：党员发展历程的时间字段支持任意文本格式输入（如"2024年10月8日"），不进行日期格式校验。
 
 #### 🏆 奖惩记录
 
@@ -216,7 +216,12 @@ go run main.go
 
 ### 详细文档
 
-完整的API接口文档请查看：[API_DOCUMENTATION.md](https://api_documentation.md/)
+完整的API接口文档请查看：[API_DOCUMENTATION.md](behind\API_DOCUMENTATION_NEW.md)
+
+**重要更新**：
+- ✅ 党员发展信息的时间字段已改为文本格式，支持任意文本输入（如"2024年10月8日"）
+- ✅ 所有接口的权限控制已完善
+- ✅ 数据库迁移脚本已提供（见"数据库迁移"章节）
 
 ## 🗃️ 数据库结构
 
@@ -265,16 +270,27 @@ go run main.go
 
 - id: 主键
 - student_id: 学员ID（外键）
-- apply_date: 申请入党日期
-- activist_date: 入党积极分子日期
-- candidate_date: 发展对象日期
-- probation_date: 预备党员日期
-- conversion_date: 转正日期
-- transfer_date: 转出日期
-- introduction_date: 介绍人日期
-- status: 当前状态（群众/入党积极分子/发展对象/预备党员/正式党员）
+- join_league_date: 入团时间（VARCHAR(50)）
+- apply_date: 递交入党申请书时间（VARCHAR(50)）
+- party_talk_date: 党组织派人谈话时间（VARCHAR(50))
+- league_recommend_date: 团组织推优时间（VARCHAR(50)）
+- activist_date: 确立为入党积极分子时间（VARCHAR(50)）
+- candidate_date: 确定发展对象时间（VARCHAR(50)）
+- superior_report_date: 提交上级党组织备案时间（VARCHAR(50)）
+- committee_review_date: 支委会审查时间（VARCHAR(50)）
+- party_committee_pre_review_date: 党委预审通过时间（VARCHAR(50)）
+- branch_meeting_date: 支部大会讨论时间（发展）（VARCHAR(50)）
+- conversion_apply_date: 递交转正申请书时间（VARCHAR(50)）
+- conversion_branch_meeting_date: 支部大会讨论时间（转正）（VARCHAR(50)）
+- probation_date: 预备党员时间（VARCHAR(50)）
+- conversion_date: 转正时间（VARCHAR(50)）
+- transfer_date: 党组织关系转接时间（VARCHAR(50)）
+- introduction_date: 党组织关系介绍信时间（VARCHAR(50)）
+- status: 当前状态（masses/activist/candidate/probationary/formal）
 - created_at: 创建时间
 - updated_at: 更新时间
+
+**注意**：所有时间字段均为文本格式（VARCHAR(50)），支持任意文本输入，如"2024年10月8日"、"2024-10-08"等格式，不进行日期格式校验。
 
 ### 奖惩表 (rewards)
 
@@ -315,7 +331,7 @@ go run main.go
    - 验证数据库配置信息
    - 确认数据库用户权限
 3. **端口占用问题**
-   - 修改 `config.env` 中的 `SERVER_PORT` 配置
+   - 修改 `config.ini` 中的 `SERVER_PORT` 配置
    - 或使用 `netstat -ano | findstr :8080` 查找占用进程
 
 ### 日志查看
@@ -329,13 +345,8 @@ go run main.go
 
 ## 📖 相关文档
 
-- **[API接口文档](https://api_documentation.md/)** - 完整的API接口说明和使用示例
-- **[API测试页面](https://api_test_utf8.html/)** - 内置的在线测试工具 🔥
-- **[Postman集合](https://postman_collection.json/)** - 可导入Postman的接口集合（未上传）
-- **[Apifox集合](https://apifox_collection.json/)** - 可导入Apifox的接口集合（未上传）
-- **[OpenAPI 3.0](https://api_openapi.yaml/)** - 标准OpenAPI 3.0格式文档（未上传）
-- **[Apifox导入文件](https://apifox_import.json/)** - 专为Apifox优化的导入文件
-- **[Protocol Buffers](https://api.proto/)** - gRPC/Protocol Buffers定义文件（未上传）
+- **[API接口文档](API_DOCUMENTATION.md)** - 完整的API接口说明和使用示例
+- **[角色关系说明](ROLE_RELATIONSHIP.md)** - 管理员/教师/学生角色关系和权限说明
 
 ## 💻 开发指南
 

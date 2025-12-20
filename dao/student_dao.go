@@ -29,6 +29,27 @@ func (dao *StudentDAO) FindAll(page, pageSize int) ([]entity.Student, int64, err
 	return students, total, err
 }
 
+// FindAllWithoutPagination 不分页查询所有学生，用于管理员查看所有数据
+func (dao *StudentDAO) FindAllWithoutPagination() ([]entity.Student, error) {
+	var students []entity.Student
+	err := dao.DB.Order("id ASC").Find(&students).Error
+	// 确保返回空数组而不是nil
+	if students == nil {
+		students = []entity.Student{}
+	}
+	return students, err
+}
+
+// FindAllBranches 获取所有不重复的党支部列表
+func (dao *StudentDAO) FindAllBranches() ([]string, error) {
+	var branches []string
+	err := dao.DB.Model(&entity.Student{}).
+		Distinct("branch").
+		Where("branch != '' AND branch IS NOT NULL").
+		Pluck("branch", &branches).Error
+	return branches, err
+}
+
 func (dao *StudentDAO) FindByID(id uint) (*entity.Student, error) {
 	var student entity.Student
 	err := dao.DB.First(&student, id).Error

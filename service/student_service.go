@@ -27,6 +27,16 @@ func (s *StudentService) ListStudents(page, pageSize int) ([]entity.Student, int
 	return s.studentDao.FindAll(page, pageSize)
 }
 
+// ListAllStudents 不分页获取所有学生，用于管理员
+func (s *StudentService) ListAllStudents() ([]entity.Student, error) {
+	return s.studentDao.FindAllWithoutPagination()
+}
+
+// GetAllBranches 获取所有党支部列表
+func (s *StudentService) GetAllBranches() ([]string, error) {
+	return s.studentDao.FindAllBranches()
+}
+
 func (s *StudentService) GetStudent(id uint) (*entity.Student, error) {
 	return s.studentDao.FindByID(id)
 }

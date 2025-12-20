@@ -111,6 +111,7 @@ func main() {
 			students := authenticated.Group("/students")
 			{
 				students.GET("", studentHandler.ListStudents)
+				students.GET("/branches", studentHandler.GetAllBranches)
 				students.GET("/:id", studentHandler.GetStudentDetail)
 				students.POST("", studentHandler.CreateStudent)
 				students.PUT("/:id", studentHandler.UpdateStudent)
